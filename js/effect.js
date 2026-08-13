@@ -3,12 +3,12 @@
 // dims, then reveals the target text; meanwhile new duplicate rows keep
 // appearing over time so the list grows well beyond its original length.
 const Effect = (() => {
-  const GLITCH_MS = 250;
-  const FADE_MS = 160;
-  const SPREAD_MS = 4200;            // window over which original rows convert
+  const GLITCH_MS = 320;
+  const FADE_MS = 480;
+  const SPREAD_MS = 5500;            // window over which original rows convert
   const PROLIFERATE_EXTRA = 34;      // extra duplicate rows appended
-  const PROLIFERATE_WINDOW_MS = 6000;
-  const PROLIFERATE_START_DELAY = 500;
+  const PROLIFERATE_WINDOW_MS = 8000;
+  const PROLIFERATE_START_DELAY = 800;
 
   let generation = 0;
 
