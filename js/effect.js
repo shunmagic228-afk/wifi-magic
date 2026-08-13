@@ -15,13 +15,25 @@ const Effect = (() => {
   // Icon paths measured/refined against a real iPhone Wi-Fi settings screenshot
   // (bold filled lock, thick banded Wi-Fi glyph, solid info circle).
   function svgLock() { return '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 10V8a5 5 0 0 1 10 0v2h1.4c.72 0 1.3.58 1.3 1.3v8.4c0 .72-.58 1.3-1.3 1.3H5.6c-.72 0-1.3-.58-1.3-1.3v-8.4c0-.72.58-1.3 1.3-1.3H7Zm2 0h6V8a3 3 0 0 0-6 0v2Z"/></svg>'; }
-  function svgWifi() { return '<svg viewBox="0 0 24 24" fill="none"><path d="M8.9 17.0A4.0 4.0 0 0 1 15.1 17.0" stroke="currentColor" stroke-width="2.9" stroke-linecap="round"/><path d="M6.0 14.6A7.8 7.8 0 0 1 18.0 14.6" stroke="currentColor" stroke-width="2.9" stroke-linecap="round"/><path d="M3.1 12.1A11.6 11.6 0 0 1 20.9 12.1" stroke="currentColor" stroke-width="2.9" stroke-linecap="round"/><circle cx="12" cy="19.6" r="1.55" fill="currentColor"/></svg>'; }
+  function svgWifi() { return '<svg viewBox="0 0 24 24" fill="none"><path d="M8.9 17.0A4.0 4.0 0 0 1 15.1 17.0" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M6.0 14.6A7.8 7.8 0 0 1 18.0 14.6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M3.1 12.1A11.6 11.6 0 0 1 20.9 12.1" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="19.6" r="1.55" fill="currentColor"/></svg>'; }
   function svgInfo() { return '<svg class="info-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.3" stroke="currentColor" stroke-width="2"/><rect x="11" y="10" width="2" height="7" rx="1" fill="currentColor"/><circle cx="12" cy="7.3" r="1.25" fill="currentColor"/></svg>'; }
 
   function escapeHtml(s) {
     const d = document.createElement('div');
     d.textContent = s;
     return d.innerHTML;
+  }
+
+  // "Mojibake" scramble effect: rapidly cycles a row's text through random
+  // characters during the glitch window, before it resolves to the real text.
+  const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_#$%&@!?*ｱｲｳｴｵｶｷｸｹｺ';
+  const SCRAMBLE_STEP_MS = 45;
+  function scrambleText(len) {
+    let s = '';
+    for (let i = 0; i < len; i++) {
+      s += SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+    }
+    return s;
   }
 
   // `html` = true means `text` is already-safe HTML (e.g. a suit-colored
@@ -38,11 +50,22 @@ const Effect = (() => {
   }
 
   function convertRow(nameEl, targetHtml, myGen, timers) {
+    const origText = nameEl.textContent;
+    const scrambleLen = Math.max(4, Math.min(origText.length, 24));
     nameEl.classList.add('glitch');
+    const scrambleSteps = Math.max(2, Math.round(GLITCH_MS / SCRAMBLE_STEP_MS));
+    for (let i = 1; i < scrambleSteps; i++) {
+      const ts = setTimeout(() => {
+        if (myGen !== generation) return;
+        nameEl.textContent = scrambleText(scrambleLen);
+      }, i * SCRAMBLE_STEP_MS);
+      timers.push(ts);
+    }
     const t1 = setTimeout(() => {
       if (myGen !== generation) return;
       nameEl.classList.remove('glitch');
       nameEl.classList.add('fading');
+      nameEl.textContent = origText;
       const t2 = setTimeout(() => {
         if (myGen !== generation) return;
         nameEl.innerHTML = targetHtml;
