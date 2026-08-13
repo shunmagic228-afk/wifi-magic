@@ -213,6 +213,7 @@
 
   function runDisperse() {
     effectState = 'dispersed';
+    showTriggerDot(false);
     const nameEls = Array.from(networkCard.querySelectorAll('.ssid-row .ssid-name'));
     nameEls.forEach((el) => {
       const delay = Math.random() * DISPERSE_SPREAD_MS;
@@ -230,6 +231,7 @@
   function scheduleDisperse() {
     if (!canDisperse() || disperseArmed) return;
     disperseArmed = true;
+    showTriggerDot(true);
     const delayMs = Store.get('disperseDelaySeconds') * 1000;
     const t = setTimeout(() => {
       disperseArmed = false;
