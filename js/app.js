@@ -83,6 +83,7 @@
     flashOverlay.classList.remove('on');
     screenMain.classList.remove('screen-warp');
     warpOverlay.classList.remove('on');
+    disperseArmed = false;
     renderMainScreen();
   }
 
@@ -154,6 +155,37 @@
     }, delaySec * 1000);
   }
 
+  // ---------- "SSID flying to everyone's phones" disperse phase ----------
+  // After the card is showing, tapping the Wi-Fi icon again makes each row's
+  // rank/suit text fade out one at a time (random order/timing, like the
+  // conversion effect) — as if the SSID is being broadcast away. The list
+  // stays scrollable throughout since this is just per-row opacity.
+  const DISPERSE_DELAY_MS = 3000;
+  const DISPERSE_SPREAD_MS = 5000;
+  let disperseArmed = false;
+
+  function runDisperse() {
+    effectState = 'dispersed';
+    const nameEls = Array.from(networkCard.querySelectorAll('.ssid-row .ssid-name'));
+    nameEls.forEach((el) => {
+      const delay = Math.random() * DISPERSE_SPREAD_MS;
+      const t = setTimeout(() => {
+        el.classList.add('vanished');
+      }, delay);
+      effectTimers.push(t);
+    });
+  }
+
+  function scheduleDisperse() {
+    if (effectState !== 'done' || disperseArmed) return;
+    disperseArmed = true;
+    const t = setTimeout(() => {
+      disperseArmed = false;
+      if (effectState === 'done') runDisperse();
+    }, DISPERSE_DELAY_MS);
+    effectTimers.push(t);
+  }
+
   // ---------- Tap gesture recognition (single vs triple, on the Wi-Fi icon) ----------
   const TAP_WINDOW_MS = 420;
   let tapCount = 0;
@@ -168,7 +200,11 @@
       tapCount = 0;
       tapTimer = null;
       if (count === 1) {
-        armEffect();
+        if (effectState === 'idle') {
+          armEffect();
+        } else if (effectState === 'done') {
+          scheduleDisperse();
+        }
       } else if (count >= 3) {
         resetToIdle();
       }

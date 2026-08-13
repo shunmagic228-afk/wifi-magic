@@ -252,7 +252,9 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   position: relative;
+  transition: opacity .9s ease;
 }
+.ssid-name.vanished { opacity: 0; }
 .suit-glyph {
   font-size: 1.75em;
   font-weight: 700;
