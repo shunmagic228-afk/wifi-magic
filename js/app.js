@@ -74,12 +74,14 @@
   }
 
   let flashGen = 0;
+  let staticGen = 0;
 
   function resetToIdle() {
     if (armTimer) { clearTimeout(armTimer); armTimer = null; }
     clearEffectTimers();
     Effect.cancelAll();
     flashGen++;
+    staticGen++;
     effectState = 'idle';
     showTriggerDot(false);
     flashOverlay.classList.remove('on');
@@ -90,8 +92,9 @@
     renderMainScreen();
   }
 
-  // Brief TV-static "snow" burst played right before the flash, for one
-  // extra beat of "something is happening" before the strobe/reveal.
+  // Brief TV-static "snow" burst layered on top partway through the flash
+  // (see runEffectNow) — runs on its own generation counter so it never
+  // interferes with the flash's own cancelable timer chain.
   const STATIC_W = 48, STATIC_H = 104;
   staticCanvas.width = STATIC_W;
   staticCanvas.height = STATIC_H;
@@ -108,12 +111,12 @@
   }
 
   function playStatic(durationMs, onDone) {
-    const myGen = ++flashGen;
+    const myGen = ++staticGen;
     staticCanvas.classList.add('on');
     const frameMs = 45;
     const start = Date.now();
     function frame() {
-      if (myGen !== flashGen) return; // superseded by a reset
+      if (myGen !== staticGen) return; // superseded by a reset
       drawStaticFrame();
       if (Date.now() - start < durationMs) {
         const t = setTimeout(frame, frameMs);
@@ -167,22 +170,25 @@
   function runEffectNow() {
     effectState = 'running';
     showTriggerDot(false);
-    playStatic(220, () => {
-      if (effectState !== 'running') return; // reset happened mid-static
-      playFlash(() => {
-        if (effectState !== 'running') return; // reset happened mid-flash
-        const target = currentTargetHTML();
-        const handle = Effect.start(networkCard, target);
-        effectTimers = effectTimers.concat(handle.timers);
-        const doneTimer = setTimeout(() => {
-          if (effectState === 'running') effectState = 'done';
-        }, handle.totalMs + 200);
-        effectTimers.push(doneTimer);
-        const warpTimer = setTimeout(() => {
-          if (effectState === 'running') playScreenWarp();
-        }, 2200 + Math.random() * 1600);
-        effectTimers.push(warpTimer);
-      });
+    // Static plays in parallel partway through the flash (not before it),
+    // so the flash's own total duration never changes.
+    const staticStartTimer = setTimeout(() => {
+      if (effectState === 'running') playStatic(220, () => {});
+    }, 420);
+    effectTimers.push(staticStartTimer);
+    playFlash(() => {
+      if (effectState !== 'running') return; // reset happened mid-flash
+      const target = currentTargetHTML();
+      const handle = Effect.start(networkCard, target);
+      effectTimers = effectTimers.concat(handle.timers);
+      const doneTimer = setTimeout(() => {
+        if (effectState === 'running') effectState = 'done';
+      }, handle.totalMs + 200);
+      effectTimers.push(doneTimer);
+      const warpTimer = setTimeout(() => {
+        if (effectState === 'running') playScreenWarp();
+      }, 2200 + Math.random() * 1600);
+      effectTimers.push(warpTimer);
     });
   }
 

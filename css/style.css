@@ -115,7 +115,7 @@ body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
-#static-overlay.on { opacity: .9; }
+#static-overlay.on { opacity: .38; }
 
 /* full-screen strobe flash, driven by JS (see app.js playFlash) */
 #flash-overlay {
@@ -279,7 +279,7 @@ body {
   line-height: 1;
   vertical-align: middle;
   margin-left: 1px;
-  transform: translateY(-0.16em);
+  transform: translateY(-0.125em);
 }
 .suit-red { color: #FF3B30; }
 .ssid-icons {
