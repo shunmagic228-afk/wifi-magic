@@ -14,6 +14,31 @@
   const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
   const SUITS = ['♠','♥','♦','♣'];
 
+  // U+FE0E forces plain monochrome "text presentation" for ♥/♦ instead of
+  // iOS possibly rendering them as colorful emoji glyphs that ignore CSS color.
+  const TEXT_VARIANT = '︎';
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // Builds the SSID target as safe HTML with ♥/♦ colored red (matching a
+  // real playing card), ♠/♣ left black. Custom free-text mode is plain
+  // escaped text with no suit coloring.
+  function currentTargetHTML() {
+    const s = Store.getAll();
+    if (s.mode === 'custom') {
+      const t = (s.customText || '').trim();
+      return escapeHtml(t.length ? t : '♠');
+    }
+    const dot = s.dotPrefix ? '.' : '';
+    const isRed = (s.suit === '♥' || s.suit === '♦');
+    const suitHtml = escapeHtml(s.suit + TEXT_VARIANT);
+    return escapeHtml(dot + s.rank + ' ') + (isRed ? '<span class="suit-red">' + suitHtml + '</span>' : suitHtml);
+  }
+
   // ---------- Effect state machine (in-memory only; never persisted) ----------
   let effectState = 'idle'; // idle | armed | running | done
   let armTimer = null;
@@ -52,20 +77,10 @@
     renderMainScreen();
   }
 
-  function currentTargetText() {
-    const s = Store.getAll();
-    if (s.mode === 'custom') {
-      const t = (s.customText || '').trim();
-      return t.length ? t : '♠';
-    }
-    const dot = s.dotPrefix ? '.' : '';
-    return dot + s.rank + ' ' + s.suit;
-  }
-
   function runEffectNow() {
     effectState = 'running';
     showTriggerDot(false);
-    const target = currentTargetText();
+    const target = currentTargetHTML();
     const handle = Effect.start(networkCard, target);
     effectTimers = effectTimers.concat(handle.timers);
     const doneTimer = setTimeout(() => {
@@ -179,17 +194,12 @@
   const cardPreview = document.getElementById('card-preview');
   const dotSegmented = document.getElementById('dot-segmented');
 
-  // U+FE0E forces plain monochrome "text presentation" for ♥/♦ instead of
-  // iOS rendering them as colorful emoji glyphs that ignore CSS color.
-  const TEXT_VARIANT = '︎';
-
   suitGrid.querySelectorAll('.suit-btn').forEach(b => {
     b.textContent = b.dataset.suit + TEXT_VARIANT;
   });
 
   function updateCardPreview() {
-    const dot = Store.get('dotPrefix') ? '.' : '';
-    cardPreview.textContent = dot + Store.get('rank') + ' ' + Store.get('suit') + TEXT_VARIANT;
+    cardPreview.innerHTML = currentTargetHTML();
   }
 
   function updateDotUI() {

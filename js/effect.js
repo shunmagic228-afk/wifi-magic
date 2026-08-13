@@ -22,16 +22,20 @@ const Effect = (() => {
     return d.innerHTML;
   }
 
-  function makeRow(text) {
+  // `html` = true means `text` is already-safe HTML (e.g. a suit-colored
+  // span built by app.js) and should be inserted as-is; otherwise it is
+  // treated as plain text and escaped.
+  function makeRow(text, html) {
     const row = document.createElement('div');
     row.className = 'row ssid-row';
+    const nameHtml = html ? text : escapeHtml(text);
     row.innerHTML =
-      '<div class="ssid-name">' + escapeHtml(text) + '</div>' +
+      '<div class="ssid-name">' + nameHtml + '</div>' +
       '<div class="ssid-icons">' + svgLock() + svgWifi() + svgInfo() + '</div>';
     return row;
   }
 
-  function convertRow(nameEl, targetText, myGen, timers) {
+  function convertRow(nameEl, targetHtml, myGen, timers) {
     nameEl.classList.add('glitch');
     const t1 = setTimeout(() => {
       if (myGen !== generation) return;
@@ -39,7 +43,7 @@ const Effect = (() => {
       nameEl.classList.add('fading');
       const t2 = setTimeout(() => {
         if (myGen !== generation) return;
-        nameEl.textContent = targetText;
+        nameEl.innerHTML = targetHtml;
         nameEl.classList.remove('fading');
         nameEl.classList.add('revealed');
       }, FADE_MS);
@@ -57,9 +61,10 @@ const Effect = (() => {
     return a;
   }
 
-  // Starts the effect. Returns { generation, timers, totalMs } so the caller
-  // can track completion and force-cancel via clearTimeout on reset.
-  function start(container, targetText) {
+  // Starts the effect. `targetHtml` must be pre-escaped/trusted HTML (see
+  // app.js's currentTargetHTML). Returns { generation, timers, totalMs } so
+  // the caller can track completion and force-cancel via clearTimeout on reset.
+  function start(container, targetHtml) {
     generation++;
     const myGen = generation;
     const timers = [];
@@ -69,7 +74,7 @@ const Effect = (() => {
       const delay = Math.random() * SPREAD_MS;
       const t = setTimeout(() => {
         if (myGen !== generation) return;
-        convertRow(nameEl, targetText, myGen, timers);
+        convertRow(nameEl, targetHtml, myGen, timers);
       }, delay);
       timers.push(t);
     });
@@ -78,7 +83,7 @@ const Effect = (() => {
       const delay = PROLIFERATE_START_DELAY + Math.random() * PROLIFERATE_WINDOW_MS;
       const t = setTimeout(() => {
         if (myGen !== generation) return;
-        const row = makeRow(targetText);
+        const row = makeRow(targetHtml, true);
         row.classList.add('new-row');
         container.appendChild(row);
         row.querySelector('.ssid-name').classList.add('revealed');

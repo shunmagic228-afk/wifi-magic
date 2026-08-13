@@ -226,6 +226,7 @@ body {
 }
 .ssid-icons svg { width: 17px; height: 17px; display: block; }
 .ssid-icons .info-icon { color: var(--ios-blue); }
+.suit-red { color: #FF3B30; }
 
 .hotspot-row .row-trail {
   display: flex; align-items: center; gap: 5px; color: #6b6b70; font-size: 15px;
