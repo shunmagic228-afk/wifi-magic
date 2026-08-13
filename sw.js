@@ -1,7 +1,7 @@
 // Offline cache for the Wi-Fi magic prop app. Cache-first with a runtime
 // fallback so nothing (including the large OCR/wasm assets) requires the
 // network once it has been loaded successfully one time.
-const CACHE_VERSION = 'wifimagic-v5';
+const CACHE_VERSION = 'wifimagic-v6';
 const PRECACHE_URLS = [
   './',
   './index.html',
