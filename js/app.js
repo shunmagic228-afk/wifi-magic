@@ -8,6 +8,7 @@
   const mainScroll = document.getElementById('main-scroll');
   const triggerDot = document.getElementById('trigger-dot');
   const flashOverlay = document.getElementById('flash-overlay');
+  const warpOverlay = document.getElementById('warp-overlay');
   const networkCard = document.getElementById('network-card');
   const heroIcon = document.getElementById('hero-icon');
   const zoneSettings = document.getElementById('zone-settings');
@@ -81,18 +82,23 @@
     showTriggerDot(false);
     flashOverlay.classList.remove('on');
     screenMain.classList.remove('screen-warp');
+    warpOverlay.classList.remove('on');
     renderMainScreen();
   }
 
   // Brief whole-screen "signal glitch" wobble fired once partway through
   // the SSID conversion, matching the reference video's mid-effect distortion.
+  const WARP_DURATION_MS = 420;
   function playScreenWarp() {
     screenMain.classList.remove('screen-warp');
-    void screenMain.offsetWidth; // force reflow so the animation can re-trigger
+    warpOverlay.classList.remove('on');
+    void screenMain.offsetWidth; // force reflow so the animations can re-trigger
     screenMain.classList.add('screen-warp');
+    warpOverlay.classList.add('on');
     const t = setTimeout(() => {
       screenMain.classList.remove('screen-warp');
-    }, 280);
+      warpOverlay.classList.remove('on');
+    }, WARP_DURATION_MS);
     effectTimers.push(t);
   }
 
