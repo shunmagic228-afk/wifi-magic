@@ -43,16 +43,27 @@ const OCR = (() => {
   }
 
   // Downscale + grayscale/contrast boost to help OCR on white-card black-text rows.
+  // Also crops off the rightmost slice of each row, where the lock/Wi-Fi/info
+  // icon cluster lives — left in, Tesseract tends to hallucinate stray
+  // characters (e.g. "az@") from those icon shapes and appends them to the
+  // SSID text.
+  const RIGHT_CROP_RATIO = 0.78; // keep only the left 78% of the image width
+
   function preprocess(img) {
     const maxW = 1100;
     const scale = img.width > maxW ? maxW / img.width : 1;
-    const w = Math.round(img.width * scale);
+    const fullW = Math.round(img.width * scale);
     const h = Math.round(img.height * scale);
+    const w = Math.round(fullW * RIGHT_CROP_RATIO);
     const canvas = document.createElement('canvas');
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, w, h);
+    ctx.drawImage(
+      img,
+      0, 0, img.width * RIGHT_CROP_RATIO, img.height,
+      0, 0, w, h
+    );
     const imgData = ctx.getImageData(0, 0, w, h);
     const d = imgData.data;
     for (let i = 0; i < d.length; i += 4) {

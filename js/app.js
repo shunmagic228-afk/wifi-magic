@@ -7,9 +7,8 @@
   const mainNavbar = document.getElementById('main-navbar');
   const mainScroll = document.getElementById('main-scroll');
   const triggerDot = document.getElementById('trigger-dot');
-  const connectedName = document.getElementById('connected-name');
   const networkCard = document.getElementById('network-card');
-  const zoneTrigger = document.getElementById('zone-trigger');
+  const heroIcon = document.getElementById('hero-icon');
   const zoneSettings = document.getElementById('zone-settings');
 
   const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
@@ -39,8 +38,7 @@
   function renderMainScreen() {
     const s = Store.getAll();
     const list = (s.baseSsids && s.baseSsids.length) ? s.baseSsids : Store.DEFAULT_SSIDS;
-    connectedName.textContent = list[0] || 'Network';
-    renderNetworkList(list.slice(1));
+    renderNetworkList(list);
     mainScroll.scrollTop = 0;
     mainNavbar.classList.remove('collapsed');
   }
@@ -60,7 +58,8 @@
       const t = (s.customText || '').trim();
       return t.length ? t : '♠';
     }
-    return '.' + s.rank + ' ' + s.suit;
+    const dot = s.dotPrefix ? '.' : '';
+    return dot + s.rank + ' ' + s.suit;
   }
 
   function runEffectNow() {
@@ -86,7 +85,7 @@
     }, delaySec * 1000);
   }
 
-  // ---------- Tap gesture recognition (single vs triple, top-left zone) ----------
+  // ---------- Tap gesture recognition (single vs triple, on the Wi-Fi icon) ----------
   const TAP_WINDOW_MS = 420;
   let tapCount = 0;
   let tapTimer = null;
@@ -108,26 +107,24 @@
     }, TAP_WINDOW_MS);
   }
 
-  zoneTrigger.addEventListener('pointerup', onTriggerZoneTap);
+  heroIcon.addEventListener('pointerup', onTriggerZoneTap);
 
-  // ---------- Hidden long-press zone -> settings screen ----------
-  const LONGPRESS_MS = 1400;
-  let longPressTimer = null;
+  // ---------- Hidden double-tap zone (bottom-right) -> settings screen ----------
+  const SETTINGS_TAP_WINDOW_MS = 400;
+  let settingsTapCount = 0;
+  let settingsTapTimer = null;
 
-  function startLongPress() {
-    cancelLongPress();
-    longPressTimer = setTimeout(() => {
-      longPressTimer = null;
-      enterSettings();
-    }, LONGPRESS_MS);
-  }
-  function cancelLongPress() {
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-  }
-  zoneSettings.addEventListener('pointerdown', startLongPress);
-  zoneSettings.addEventListener('pointerup', cancelLongPress);
-  zoneSettings.addEventListener('pointercancel', cancelLongPress);
-  zoneSettings.addEventListener('pointerleave', cancelLongPress);
+  zoneSettings.addEventListener('pointerup', (e) => {
+    e.preventDefault();
+    settingsTapCount++;
+    if (settingsTapTimer) clearTimeout(settingsTapTimer);
+    settingsTapTimer = setTimeout(() => {
+      const count = settingsTapCount;
+      settingsTapCount = 0;
+      settingsTapTimer = null;
+      if (count === 2) enterSettings();
+    }, SETTINGS_TAP_WINDOW_MS);
+  });
 
   // ---------- Scroll -> collapse large title ----------
   mainScroll.addEventListener('scroll', () => {
@@ -180,9 +177,26 @@
   const suitGrid = document.getElementById('suit-grid');
   const rankGrid = document.getElementById('rank-grid');
   const cardPreview = document.getElementById('card-preview');
+  const dotSegmented = document.getElementById('dot-segmented');
+
+  // U+FE0E forces plain monochrome "text presentation" for ♥/♦ instead of
+  // iOS rendering them as colorful emoji glyphs that ignore CSS color.
+  const TEXT_VARIANT = '︎';
+
+  suitGrid.querySelectorAll('.suit-btn').forEach(b => {
+    b.textContent = b.dataset.suit + TEXT_VARIANT;
+  });
 
   function updateCardPreview() {
-    cardPreview.textContent = '.' + Store.get('rank') + ' ' + Store.get('suit');
+    const dot = Store.get('dotPrefix') ? '.' : '';
+    cardPreview.textContent = dot + Store.get('rank') + ' ' + Store.get('suit') + TEXT_VARIANT;
+  }
+
+  function updateDotUI() {
+    const on = Store.get('dotPrefix');
+    dotSegmented.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('active', (b.dataset.dot === 'on') === on);
+    });
   }
 
   function buildRankGrid() {
@@ -210,6 +224,14 @@
     if (!btn) return;
     Store.set('rank', btn.dataset.rank);
     rankGrid.querySelectorAll('.rank-btn').forEach(b => b.classList.toggle('active', b === btn));
+    updateCardPreview();
+  });
+
+  dotSegmented.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-dot]');
+    if (!btn) return;
+    Store.set('dotPrefix', btn.dataset.dot === 'on');
+    updateDotUI();
     updateCardPreview();
   });
 
@@ -319,6 +341,7 @@
     updateModeUI(s.mode);
     suitGrid.querySelectorAll('.suit-btn').forEach(b => b.classList.toggle('active', b.dataset.suit === s.suit));
     rankGrid.querySelectorAll('.rank-btn').forEach(b => b.classList.toggle('active', b.dataset.rank === s.rank));
+    updateDotUI();
     updateCardPreview();
     customTextInput.value = s.customText || '';
     renderDelay();

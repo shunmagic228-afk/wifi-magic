@@ -29,11 +29,12 @@
 
     <div class="scroll-area" id="main-scroll">
       <div class="hero">
-        <div class="hero-icon">
+        <div class="hero-icon" id="hero-icon">
           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 18.3C12.66 18.3 13.2 18.84 13.2 19.5C13.2 20.16 12.66 20.7 12 20.7C11.34 20.7 10.8 20.16 10.8 19.5C10.8 18.84 11.34 18.3 12 18.3Z" fill="white"/>
-            <path d="M6.2 14.6C8 12.9 9.9 12.1 12 12.1C14.1 12.1 16 12.9 17.8 14.6" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M3 10.9C6 8.1 9 6.7 12 6.7C15 6.7 18 8.1 21 10.9" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M6.2 14.9C8 13 9.9 12.1 12 12.1C14.1 12.1 16 13 17.8 14.9" stroke="white" stroke-width="2.1" stroke-linecap="round"/>
+            <path d="M3.3 10.9C6.3 7.9 9 6.6 12 6.6C15 6.6 17.7 7.9 20.7 10.9" stroke="white" stroke-width="2.1" stroke-linecap="round"/>
+            <path d="M9.3 18.9C10 18.1 10.9 17.7 12 17.7C13.1 17.7 14 18.1 14.7 18.9" stroke="white" stroke-width="2.1" stroke-linecap="round"/>
+            <circle cx="12" cy="21.1" r="1.15" fill="white"/>
           </svg>
         </div>
         <div class="hero-title">Wi-Fi</div>
@@ -45,18 +46,9 @@
           <div class="row-label">Wi-Fi</div>
           <div class="switch"></div>
         </div>
-        <div class="row ssid-row" id="connected-row">
-          <div class="ssid-check">✓</div>
-          <div class="ssid-name" id="connected-name">—</div>
-          <div class="ssid-icons">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 10V8a5 5 0 0 1 10 0v2h1.2c.66 0 1.2.54 1.2 1.2v8.6c0 .66-.54 1.2-1.2 1.2H5.8A1.2 1.2 0 0 1 4.6 19.8v-8.6C4.6 10.54 5.14 10 5.8 10H7Zm2 0h6V8a3 3 0 0 0-6 0v2Z"/></svg>
-            <svg viewBox="0 0 24 24" fill="none"><path d="M2.5 9C6 5.5 9 4 12 4C15 4 18 5.5 21.5 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M5.5 12.3C7.8 10 9.8 9 12 9C14.2 9 16.2 10 18.5 12.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M8.7 15.6C10 14.3 11 13.8 12 13.8C13 13.8 14 14.3 15.3 15.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="18.6" r="1.1" fill="currentColor"/></svg>
-            <svg class="info-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><rect x="11.1" y="10.2" width="1.8" height="6.4" rx="0.9" fill="currentColor"/><circle cx="12" cy="7.6" r="1.05" fill="currentColor"/></svg>
-          </div>
-        </div>
       </div>
 
-      <div class="section-title">ほかのネットワーク</div>
+      <div class="section-title">ネットワーク</div>
       <div class="card" id="network-card">
         <!-- SSID rows injected here -->
       </div>
@@ -76,7 +68,6 @@
       <div class="footnote">Wi-Fiネットワークが使用できないとき、このデバイスの近くにあるインターネット共有ホットスポットを自動的に検出することを許可します。</div>
     </div>
 
-    <div id="zone-trigger" class="hidden-zone"></div>
     <div id="zone-settings" class="hidden-zone"></div>
   </div>
 
@@ -105,6 +96,10 @@
         <h3>ランク</h3>
         <div class="rank-grid" id="rank-grid"></div>
         <div class="card-preview" id="card-preview">.3 ♠</div>
+        <div class="segmented" id="dot-segmented" style="margin-top:12px;">
+          <button data-dot="on" class="active">先頭に「.」を付ける</button>
+          <button data-dot="off">付けない</button>
+        </div>
       </div>
 
       <div class="settings-block" id="block-custom">

@@ -23,6 +23,7 @@ const Store = (() => {
     suit: '♠',
     rank: '3',
     customText: '',
+    dotPrefix: true,
     delaySeconds: 5,
     baseSsids: DEFAULT_SSIDS
   };
