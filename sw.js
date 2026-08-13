@@ -1,7 +1,7 @@
 // Offline cache for the Wi-Fi magic prop app. Cache-first with a runtime
 // fallback so nothing (including the large OCR/wasm assets) requires the
 // network once it has been loaded successfully one time.
-const CACHE_VERSION = 'wifimagic-v2';
+const CACHE_VERSION = 'wifimagic-v3';
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -17,6 +17,7 @@ const PRECACHE_URLS = [
   './vendor/tesseract/tesseract-core.wasm',
   './vendor/tesseract/tesseract-core-simd.wasm',
   './vendor/tesseract/lang/eng.traineddata.gz',
+  './icons/hero-wifi.png',
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
