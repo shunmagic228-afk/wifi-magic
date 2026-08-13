@@ -25,6 +25,7 @@ const Store = (() => {
     customText: '',
     dotPrefix: true,
     delaySeconds: 5,
+    disperseDelaySeconds: 3,
     baseSsids: DEFAULT_SSIDS
   };
 

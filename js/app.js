@@ -208,7 +208,6 @@
   // rank/suit text fade out one at a time (random order/timing, like the
   // conversion effect) — as if the SSID is being broadcast away. The list
   // stays scrollable throughout since this is just per-row opacity.
-  const DISPERSE_DELAY_MS = 3000;
   const DISPERSE_SPREAD_MS = 6000;
   let disperseArmed = false;
 
@@ -231,10 +230,11 @@
   function scheduleDisperse() {
     if (!canDisperse() || disperseArmed) return;
     disperseArmed = true;
+    const delayMs = Store.get('disperseDelaySeconds') * 1000;
     const t = setTimeout(() => {
       disperseArmed = false;
       if (canDisperse()) runDisperse();
-    }, DISPERSE_DELAY_MS);
+    }, delayMs);
     effectTimers.push(t);
   }
 
@@ -410,6 +410,23 @@
     renderDelay();
   });
 
+  // ---- disperse delay stepper ----
+  const disperseDelayValueEl = document.getElementById('disperse-delay-value');
+  function renderDisperseDelay() {
+    const v = Store.get('disperseDelaySeconds');
+    disperseDelayValueEl.innerHTML = v + '<span>秒</span>';
+  }
+  document.getElementById('disperse-delay-minus').addEventListener('click', () => {
+    const v = Math.max(3, Store.get('disperseDelaySeconds') - 1);
+    Store.set('disperseDelaySeconds', v);
+    renderDisperseDelay();
+  });
+  document.getElementById('disperse-delay-plus').addEventListener('click', () => {
+    const v = Math.min(20, Store.get('disperseDelaySeconds') + 1);
+    Store.set('disperseDelaySeconds', v);
+    renderDisperseDelay();
+  });
+
   // ---- base SSID list editor (also driven by OCR import) ----
   const ocrListEl = document.getElementById('ocr-list');
   const ocrStatusEl = document.getElementById('ocr-status');
@@ -497,6 +514,7 @@
     updateCardPreview();
     customTextInput.value = s.customText || '';
     renderDelay();
+    renderDisperseDelay();
     ocrStatusEl.textContent = '';
     renderSsidList();
   }
