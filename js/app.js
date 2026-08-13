@@ -176,12 +176,16 @@
     });
   }
 
+  function canDisperse() {
+    return effectState === 'running' || effectState === 'done';
+  }
+
   function scheduleDisperse() {
-    if (effectState !== 'done' || disperseArmed) return;
+    if (!canDisperse() || disperseArmed) return;
     disperseArmed = true;
     const t = setTimeout(() => {
       disperseArmed = false;
-      if (effectState === 'done') runDisperse();
+      if (canDisperse()) runDisperse();
     }, DISPERSE_DELAY_MS);
     effectTimers.push(t);
   }
@@ -202,7 +206,7 @@
       if (count === 1) {
         if (effectState === 'idle') {
           armEffect();
-        } else if (effectState === 'done') {
+        } else if (canDisperse()) {
           scheduleDisperse();
         }
       } else if (count >= 3) {
