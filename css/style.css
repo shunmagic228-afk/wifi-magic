@@ -265,6 +265,7 @@ body {
   line-height: 1;
   vertical-align: middle;
   margin-left: 1px;
+  transform: translateY(-0.09em);
 }
 .suit-red { color: #FF3B30; }
 .ssid-icons {
