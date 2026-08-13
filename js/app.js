@@ -80,7 +80,20 @@
     effectState = 'idle';
     showTriggerDot(false);
     flashOverlay.classList.remove('on');
+    screenMain.classList.remove('screen-warp');
     renderMainScreen();
+  }
+
+  // Brief whole-screen "signal glitch" wobble fired once partway through
+  // the SSID conversion, matching the reference video's mid-effect distortion.
+  function playScreenWarp() {
+    screenMain.classList.remove('screen-warp');
+    void screenMain.offsetWidth; // force reflow so the animation can re-trigger
+    screenMain.classList.add('screen-warp');
+    const t = setTimeout(() => {
+      screenMain.classList.remove('screen-warp');
+    }, 280);
+    effectTimers.push(t);
   }
 
   // Rapid full-screen black strobe played right before the SSID reveal
@@ -117,6 +130,10 @@
         if (effectState === 'running') effectState = 'done';
       }, handle.totalMs + 200);
       effectTimers.push(doneTimer);
+      const warpTimer = setTimeout(() => {
+        if (effectState === 'running') playScreenWarp();
+      }, 2200 + Math.random() * 1600);
+      effectTimers.push(warpTimer);
     });
   }
 
