@@ -47,7 +47,11 @@ const OCR = (() => {
   // icon cluster lives — left in, Tesseract tends to hallucinate stray
   // characters (e.g. "az@") from those icon shapes and appends them to the
   // SSID text.
-  const RIGHT_CROP_RATIO = 0.78; // keep only the left 78% of the image width
+  // Measured against a real iPhone Wi-Fi list screenshot: the lock/Wi-Fi/info
+  // icon cluster starts at roughly 74% of the row width. Cropping to 68%
+  // leaves a safety margin so the lock icon (the biggest offender — its
+  // solid glyph gets misread as a stray "a") never reaches the OCR at all.
+  const RIGHT_CROP_RATIO = 0.68;
 
   function preprocess(img) {
     const maxW = 1100;
@@ -98,6 +102,11 @@ const OCR = (() => {
     return line
       .replace(/[|]/g, 'I')
       .replace(/\s{2,}/g, ' ')
+      // Safety net: even with the icon column cropped out, a sliver of the
+      // lock icon can survive and get misread as a lone trailing letter
+      // (e.g. "57620802-5G a"). Real SSIDs don't end in a space + single
+      // lowercase letter, so this is safe to strip.
+      .replace(/\s+[a-z]$/, '')
       .trim();
   }
 

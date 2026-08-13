@@ -7,6 +7,7 @@
   const mainNavbar = document.getElementById('main-navbar');
   const mainScroll = document.getElementById('main-scroll');
   const triggerDot = document.getElementById('trigger-dot');
+  const flashOverlay = document.getElementById('flash-overlay');
   const networkCard = document.getElementById('network-card');
   const heroIcon = document.getElementById('hero-icon');
   const zoneSettings = document.getElementById('zone-settings');
@@ -36,7 +37,8 @@
     const dot = s.dotPrefix ? '.' : '';
     const isRed = (s.suit === '♥' || s.suit === '♦');
     const suitHtml = escapeHtml(s.suit + TEXT_VARIANT);
-    return escapeHtml(dot + s.rank + ' ') + (isRed ? '<span class="suit-red">' + suitHtml + '</span>' : suitHtml);
+    const cls = 'suit-glyph' + (isRed ? ' suit-red' : '');
+    return escapeHtml(dot + s.rank + ' ') + '<span class="' + cls + '">' + suitHtml + '</span>';
   }
 
   // ---------- Effect state machine (in-memory only; never persisted) ----------
@@ -68,25 +70,54 @@
     mainNavbar.classList.remove('collapsed');
   }
 
+  let flashGen = 0;
+
   function resetToIdle() {
     if (armTimer) { clearTimeout(armTimer); armTimer = null; }
     clearEffectTimers();
     Effect.cancelAll();
+    flashGen++;
     effectState = 'idle';
     showTriggerDot(false);
+    flashOverlay.classList.remove('on');
     renderMainScreen();
+  }
+
+  // Rapid full-screen black strobe played right before the SSID reveal
+  // begins, matching the reference "hacker" video's flash-cut transition.
+  const FLASH_PATTERN = [90, 70, 85, 65, 90, 70, 95, 75, 100, 80, 120, 90];
+
+  function playFlash(onDone) {
+    const myGen = ++flashGen;
+    let i = 0;
+    function step() {
+      if (myGen !== flashGen) return; // superseded by a reset
+      if (i >= FLASH_PATTERN.length) {
+        flashOverlay.classList.remove('on');
+        onDone();
+        return;
+      }
+      flashOverlay.classList.toggle('on', i % 2 === 0);
+      const t = setTimeout(step, FLASH_PATTERN[i]);
+      effectTimers.push(t);
+      i++;
+    }
+    step();
   }
 
   function runEffectNow() {
     effectState = 'running';
     showTriggerDot(false);
-    const target = currentTargetHTML();
-    const handle = Effect.start(networkCard, target);
-    effectTimers = effectTimers.concat(handle.timers);
-    const doneTimer = setTimeout(() => {
-      if (effectState === 'running') effectState = 'done';
-    }, handle.totalMs + 200);
-    effectTimers.push(doneTimer);
+    playFlash(() => {
+      if (effectState !== 'running') return; // reset happened mid-flash
+      const target = currentTargetHTML();
+      const handle = Effect.start(networkCard, target);
+      effectTimers = effectTimers.concat(handle.timers);
+      const doneTimer = setTimeout(() => {
+        if (effectState === 'running') effectState = 'done';
+      }, handle.totalMs + 200);
+      effectTimers.push(doneTimer);
+    });
   }
 
   function armEffect() {

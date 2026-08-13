@@ -1,13 +1,14 @@
 :root {
   --ios-bg: #F2F2F7;
   --ios-card: #FFFFFF;
-  --ios-separator: #E3E3E8;
+  --ios-separator: #C6C6C8;
   --ios-blue: #007AFF;
   --ios-green: #34C759;
   --ios-text: #000000;
   --ios-secondary: #8E8E93;
   --ios-desc: #3C3C43;
   --glitch-color: #FF2D9E;
+  --ios-icon: #1c1c1e;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -102,6 +103,17 @@ body {
 }
 #trigger-dot.on { opacity: 1; }
 
+/* full-screen strobe flash, driven by JS (see app.js playFlash) */
+#flash-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+#flash-overlay.on { opacity: 1; }
+
 .scroll-area {
   flex: 1;
   overflow-y: auto;
@@ -158,8 +170,8 @@ body {
 .row {
   display: flex;
   align-items: center;
-  min-height: 44px;
-  padding: 11px 16px;
+  min-height: 48px;
+  padding: 13px 16px;
   border-bottom: 0.5px solid var(--ios-separator);
   position: relative;
   background: var(--ios-card);
@@ -217,16 +229,23 @@ body {
   text-overflow: ellipsis;
   position: relative;
 }
+.suit-glyph {
+  font-size: 1.32em;
+  font-weight: 700;
+  display: inline-block;
+  line-height: 1;
+  vertical-align: -0.14em;
+}
+.suit-red { color: #FF3B30; }
 .ssid-icons {
   display: flex;
   align-items: center;
-  gap: 7px;
-  color: #3a3a3c;
+  gap: 8px;
+  color: var(--ios-icon);
   flex-shrink: 0;
 }
-.ssid-icons svg { width: 17px; height: 17px; display: block; }
+.ssid-icons svg { width: 20px; height: 20px; display: block; }
 .ssid-icons .info-icon { color: var(--ios-blue); }
-.suit-red { color: #FF3B30; }
 
 .hotspot-row .row-trail {
   display: flex; align-items: center; gap: 5px; color: #6b6b70; font-size: 15px;
