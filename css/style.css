@@ -230,11 +230,12 @@ body {
   position: relative;
 }
 .suit-glyph {
-  font-size: 1.32em;
+  font-size: 3.1em;
   font-weight: 700;
   display: inline-block;
   line-height: 1;
-  vertical-align: -0.14em;
+  vertical-align: middle;
+  margin-left: 1px;
 }
 .suit-red { color: #FF3B30; }
 .ssid-icons {
