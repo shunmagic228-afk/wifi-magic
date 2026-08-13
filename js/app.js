@@ -9,6 +9,8 @@
   const triggerDot = document.getElementById('trigger-dot');
   const flashOverlay = document.getElementById('flash-overlay');
   const warpOverlay = document.getElementById('warp-overlay');
+  const staticCanvas = document.getElementById('static-overlay');
+  const staticCtx = staticCanvas.getContext('2d');
   const networkCard = document.getElementById('network-card');
   const heroIcon = document.getElementById('hero-icon');
   const zoneSettings = document.getElementById('zone-settings');
@@ -81,10 +83,47 @@
     effectState = 'idle';
     showTriggerDot(false);
     flashOverlay.classList.remove('on');
+    staticCanvas.classList.remove('on');
     screenMain.classList.remove('screen-warp');
     warpOverlay.classList.remove('on');
     disperseArmed = false;
     renderMainScreen();
+  }
+
+  // Brief TV-static "snow" burst played right before the flash, for one
+  // extra beat of "something is happening" before the strobe/reveal.
+  const STATIC_W = 48, STATIC_H = 104;
+  staticCanvas.width = STATIC_W;
+  staticCanvas.height = STATIC_H;
+
+  function drawStaticFrame() {
+    const imgData = staticCtx.createImageData(STATIC_W, STATIC_H);
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const shade = Math.random() < 0.5 ? 0 : 255;
+      d[i] = d[i + 1] = d[i + 2] = shade;
+      d[i + 3] = 255;
+    }
+    staticCtx.putImageData(imgData, 0, 0);
+  }
+
+  function playStatic(durationMs, onDone) {
+    const myGen = ++flashGen;
+    staticCanvas.classList.add('on');
+    const frameMs = 45;
+    const start = Date.now();
+    function frame() {
+      if (myGen !== flashGen) return; // superseded by a reset
+      drawStaticFrame();
+      if (Date.now() - start < durationMs) {
+        const t = setTimeout(frame, frameMs);
+        effectTimers.push(t);
+      } else {
+        staticCanvas.classList.remove('on');
+        onDone();
+      }
+    }
+    frame();
   }
 
   // Brief whole-screen "signal glitch" wobble fired once partway through
@@ -128,19 +167,22 @@
   function runEffectNow() {
     effectState = 'running';
     showTriggerDot(false);
-    playFlash(() => {
-      if (effectState !== 'running') return; // reset happened mid-flash
-      const target = currentTargetHTML();
-      const handle = Effect.start(networkCard, target);
-      effectTimers = effectTimers.concat(handle.timers);
-      const doneTimer = setTimeout(() => {
-        if (effectState === 'running') effectState = 'done';
-      }, handle.totalMs + 200);
-      effectTimers.push(doneTimer);
-      const warpTimer = setTimeout(() => {
-        if (effectState === 'running') playScreenWarp();
-      }, 2200 + Math.random() * 1600);
-      effectTimers.push(warpTimer);
+    playStatic(220, () => {
+      if (effectState !== 'running') return; // reset happened mid-static
+      playFlash(() => {
+        if (effectState !== 'running') return; // reset happened mid-flash
+        const target = currentTargetHTML();
+        const handle = Effect.start(networkCard, target);
+        effectTimers = effectTimers.concat(handle.timers);
+        const doneTimer = setTimeout(() => {
+          if (effectState === 'running') effectState = 'done';
+        }, handle.totalMs + 200);
+        effectTimers.push(doneTimer);
+        const warpTimer = setTimeout(() => {
+          if (effectState === 'running') playScreenWarp();
+        }, 2200 + Math.random() * 1600);
+        effectTimers.push(warpTimer);
+      });
     });
   }
 
