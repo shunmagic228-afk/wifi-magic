@@ -161,7 +161,7 @@
   // conversion effect) — as if the SSID is being broadcast away. The list
   // stays scrollable throughout since this is just per-row opacity.
   const DISPERSE_DELAY_MS = 3000;
-  const DISPERSE_SPREAD_MS = 5000;
+  const DISPERSE_SPREAD_MS = 6000;
   let disperseArmed = false;
 
   function runDisperse() {
