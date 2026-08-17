@@ -96,7 +96,7 @@
   // it (a local double-exposure stutter), then removes the clone and
   // un-dims. Targets the real elements at their live position each pulse
   // (getBoundingClientRect), so it looks correct regardless of scroll.
-  const BUG_DURATION_MS = 4800;
+  const BUG_DURATION_MS = 3800;
   const BUG_PULSE_GAP_MIN = 90, BUG_PULSE_GAP_MAX = 260;
   const BUG_PULSE_LEN_MIN = 90, BUG_PULSE_LEN_MAX = 220;
   let bugGhosts = [];
@@ -217,8 +217,13 @@
       if (effectState !== 'running') return; // reset happened mid-flash
       // The screen-bug glitch plays alone first (matching the reference:
       // no SSID scrambling happens until it's done), then the SSID
-      // conversion begins.
+      // conversion begins. The screen-warp wobble fires once during this
+      // pre-conversion bug phase (not during the SSID conversion).
       playBugGlitch(BUG_DURATION_MS);
+      const warpTimer = setTimeout(() => {
+        if (effectState === 'running') playScreenWarp();
+      }, 1100 + Math.random() * 1400);
+      effectTimers.push(warpTimer);
       const bugDoneTimer = setTimeout(() => {
         if (effectState !== 'running') return;
         const target = currentTargetHTML();
@@ -228,10 +233,6 @@
           if (effectState === 'running') effectState = 'done';
         }, handle.totalMs + 200);
         effectTimers.push(doneTimer);
-        const warpTimer = setTimeout(() => {
-          if (effectState === 'running') playScreenWarp();
-        }, 2200 + Math.random() * 1600);
-        effectTimers.push(warpTimer);
       }, BUG_DURATION_MS);
       effectTimers.push(bugDoneTimer);
     });
