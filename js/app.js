@@ -11,7 +11,7 @@
   const warpOverlay = document.getElementById('warp-overlay');
   const networkCard = document.getElementById('network-card');
   const heroIcon = document.getElementById('hero-icon');
-  const zoneSettings = document.getElementById('zone-settings');
+  const navSettingsBtn = document.getElementById('nav-settings-btn');
 
   const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
   const SUITS = ['♠','♥','♦','♣'];
@@ -313,21 +313,13 @@
 
   heroIcon.addEventListener('pointerup', onTriggerZoneTap);
 
-  // ---------- Hidden double-tap zone (bottom-right) -> settings screen ----------
-  const SETTINGS_TAP_WINDOW_MS = 400;
-  let settingsTapCount = 0;
-  let settingsTapTimer = null;
-
-  zoneSettings.addEventListener('pointerup', (e) => {
+  // ---------- Top-left "設定" label -> settings screen ----------
+  // A single tap always works, at any point during the performance
+  // (idle/armed/running/dispersed) — enterSettings() itself resets to a
+  // clean idle state first.
+  navSettingsBtn.addEventListener('pointerup', (e) => {
     e.preventDefault();
-    settingsTapCount++;
-    if (settingsTapTimer) clearTimeout(settingsTapTimer);
-    settingsTapTimer = setTimeout(() => {
-      const count = settingsTapCount;
-      settingsTapCount = 0;
-      settingsTapTimer = null;
-      if (count === 2) enterSettings();
-    }, SETTINGS_TAP_WINDOW_MS);
+    enterSettings();
   });
 
   // ---------- Scroll -> collapse large title ----------

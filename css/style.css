@@ -71,7 +71,7 @@ body {
   white-space: nowrap;
   min-width: 60px;
 }
-.navbar .nav-left { display: flex; align-items: center; gap: 2px; }
+.navbar .nav-left { display: flex; align-items: center; gap: 2px; touch-action: manipulation; }
 .navbar .nav-left .chevron { font-size: 22px; line-height: 1; margin-top: -2px; }
 .navbar .nav-right { text-align: right; }
 .navbar .nav-title {
@@ -376,18 +376,6 @@ body {
   100% { transform: none; filter: none; }
 }
 
-/* invisible tap zones */
-.hidden-zone {
-  position: absolute;
-  z-index: 30;
-  touch-action: manipulation;
-  -webkit-touch-callout: none;
-}
-#zone-settings {
-  bottom: 0; right: 0;
-  width: 110px;
-  height: 90px;
-}
 
 /* ---------- Settings screen ---------- */
 
