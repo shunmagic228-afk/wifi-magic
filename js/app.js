@@ -9,7 +9,6 @@
   const triggerDot = document.getElementById('trigger-dot');
   const flashOverlay = document.getElementById('flash-overlay');
   const warpOverlay = document.getElementById('warp-overlay');
-  const rollGhostOverlay = document.getElementById('roll-ghost-overlay');
   const networkCard = document.getElementById('network-card');
   const heroIcon = document.getElementById('hero-icon');
   const zoneSettings = document.getElementById('zone-settings');
@@ -73,87 +72,104 @@
   }
 
   let flashGen = 0;
-  let rollGhostGen = 0;
+  let bugGen = 0;
 
   function resetToIdle() {
     if (armTimer) { clearTimeout(armTimer); armTimer = null; }
     clearEffectTimers();
     Effect.cancelAll();
     flashGen++;
-    rollGhostGen++;
+    bugGen++;
+    clearBugGhosts();
     effectState = 'idle';
     showTriggerDot(false);
     flashOverlay.classList.remove('on');
-    rollGhostOverlay.classList.remove('on');
-    rollGhostOverlay.innerHTML = '';
     screenMain.classList.remove('screen-warp');
     warpOverlay.classList.remove('on');
     disperseArmed = false;
     renderMainScreen();
   }
 
-  // "VHS roll" interference: a translucent duplicate of the whole scroll
-  // content, clipped to a horizontal band that sweeps up/down the visible
-  // list area repeatedly, while the duplicate's own content slowly drifts
-  // from the top of the page downward over the effect duration. Since the
-  // duplicate always starts at the true top of the document regardless of
-  // the real list's current scroll position, the hero Wi-Fi icon/header
-  // flickers through early on even if the user has scrolled the real list
-  // far down — matching the reference video's "footage playing from the
-  // top" look. Runs on its own generation counter/rAF loop, independent of
-  // the flash's setTimeout chain.
-  const ROLL_BAND_HEIGHT = 130;
-  const ROLL_SWEEP_MS = 1050;
-  const ROLL_DURATION_MS = 5600;
+  // Pre-conversion "screen bug": short, randomly-timed glitch pulses hit
+  // random rows/header elements — each pulse dims+desaturates the real
+  // element in place and overlays a translucent, slightly offset clone of
+  // it (a local double-exposure stutter), then removes the clone and
+  // un-dims. Targets the real elements at their live position each pulse
+  // (getBoundingClientRect), so it looks correct regardless of scroll.
+  const BUG_DURATION_MS = 5800;
+  const BUG_PULSE_GAP_MIN = 90, BUG_PULSE_GAP_MAX = 260;
+  const BUG_PULSE_LEN_MIN = 90, BUG_PULSE_LEN_MAX = 220;
+  let bugGhosts = [];
 
-  function playRollGhost(durationMs) {
-    const myGen = ++rollGhostGen;
+  function clearBugGhosts() {
+    bugGhosts.forEach(g => g.remove());
+    bugGhosts = [];
+    document.querySelectorAll('.bug-dim').forEach(el => el.classList.remove('bug-dim'));
+  }
 
-    const clone = mainScroll.cloneNode(true);
+  function bugCandidates() {
+    return [
+      heroIcon,
+      document.querySelector('.hero-title'),
+      document.querySelector('.hero-desc'),
+      document.querySelector('#main-scroll .section-title'),
+      ...Array.from(document.querySelectorAll('#main-scroll .row'))
+    ].filter(Boolean);
+  }
+
+  function spawnBugGhost(el) {
+    const rect = el.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const clone = el.cloneNode(true);
     clone.removeAttribute('id');
-    clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-    clone.classList.add('roll-ghost-inner');
-    clone.style.position = 'absolute';
-    clone.style.overflow = 'visible';
-    clone.style.height = 'auto';
+    clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+    clone.className = (clone.className ? clone.className + ' ' : '') + 'bug-ghost';
+    const dx = (Math.random() - 0.5) * 8;
+    const dy = 3 + Math.random() * 6;
+    clone.style.left = (rect.left + dx) + 'px';
+    clone.style.top = (rect.top + dy) + 'px';
+    clone.style.width = rect.width + 'px';
+    clone.style.height = rect.height + 'px';
+    document.body.appendChild(clone);
+    return clone;
+  }
 
-    const band = document.createElement('div');
-    band.className = 'roll-band';
-    band.style.height = ROLL_BAND_HEIGHT + 'px';
-    band.appendChild(clone);
-
-    rollGhostOverlay.innerHTML = '';
-    rollGhostOverlay.appendChild(band);
-
-    const scrollRect = mainScroll.getBoundingClientRect();
-    const mainRect = screenMain.getBoundingClientRect();
-    rollGhostOverlay.style.top = (scrollRect.top - mainRect.top) + 'px';
-
-    const viewportH = scrollRect.height;
-    const maxOffset = Math.max(0, mainScroll.scrollHeight - viewportH);
-
-    rollGhostOverlay.classList.add('on');
-
+  function playBugGlitch(durationMs) {
+    const myGen = ++bugGen;
     const start = performance.now();
-    function frame(now) {
-      if (myGen !== rollGhostGen) return;
-      const t = now - start;
-      if (t >= durationMs) {
-        rollGhostOverlay.classList.remove('on');
-        rollGhostOverlay.innerHTML = '';
-        return;
+
+    function pulse() {
+      if (myGen !== bugGen) return;
+      if (performance.now() - start >= durationMs) return;
+
+      const candidates = bugCandidates();
+      if (candidates.length) {
+        const runStart = Math.floor(Math.random() * candidates.length);
+        const runLen = 1 + Math.floor(Math.random() * 3);
+        const targets = candidates.slice(runStart, runStart + runLen);
+        const pulseMs = BUG_PULSE_LEN_MIN + Math.random() * (BUG_PULSE_LEN_MAX - BUG_PULSE_LEN_MIN);
+
+        targets.forEach(el => {
+          el.classList.add('bug-dim');
+          const ghost = spawnBugGhost(el);
+          if (ghost) bugGhosts.push(ghost);
+          const t = setTimeout(() => {
+            if (myGen !== bugGen) return;
+            el.classList.remove('bug-dim');
+            if (ghost) {
+              ghost.remove();
+              bugGhosts = bugGhosts.filter(g => g !== ghost);
+            }
+          }, pulseMs);
+          effectTimers.push(t);
+        });
       }
-      const sweepT = (t % ROLL_SWEEP_MS) / ROLL_SWEEP_MS;
-      const bandTop = -ROLL_BAND_HEIGHT + sweepT * (viewportH + ROLL_BAND_HEIGHT * 2);
-      band.style.top = bandTop + 'px';
 
-      const driftT = Math.min(1, t / durationMs);
-      const virtualScroll = driftT * maxOffset;
-      clone.style.top = (-virtualScroll) + 'px';
-
-      requestAnimationFrame(frame);
+      const gap = BUG_PULSE_GAP_MIN + Math.random() * (BUG_PULSE_GAP_MAX - BUG_PULSE_GAP_MIN);
+      const t = setTimeout(pulse, gap);
+      effectTimers.push(t);
     }
-    requestAnimationFrame(frame);
+    pulse();
   }
 
   // Brief whole-screen "signal glitch" wobble fired once partway through
@@ -199,18 +215,25 @@
     showTriggerDot(false);
     playFlash(() => {
       if (effectState !== 'running') return; // reset happened mid-flash
-      playRollGhost(ROLL_DURATION_MS);
-      const target = currentTargetHTML();
-      const handle = Effect.start(networkCard, target);
-      effectTimers = effectTimers.concat(handle.timers);
-      const doneTimer = setTimeout(() => {
-        if (effectState === 'running') effectState = 'done';
-      }, handle.totalMs + 200);
-      effectTimers.push(doneTimer);
-      const warpTimer = setTimeout(() => {
-        if (effectState === 'running') playScreenWarp();
-      }, 2200 + Math.random() * 1600);
-      effectTimers.push(warpTimer);
+      // The screen-bug glitch plays alone first (matching the reference:
+      // no SSID scrambling happens until it's done), then the SSID
+      // conversion begins.
+      playBugGlitch(BUG_DURATION_MS);
+      const bugDoneTimer = setTimeout(() => {
+        if (effectState !== 'running') return;
+        const target = currentTargetHTML();
+        const handle = Effect.start(networkCard, target);
+        effectTimers = effectTimers.concat(handle.timers);
+        const doneTimer = setTimeout(() => {
+          if (effectState === 'running') effectState = 'done';
+        }, handle.totalMs + 200);
+        effectTimers.push(doneTimer);
+        const warpTimer = setTimeout(() => {
+          if (effectState === 'running') playScreenWarp();
+        }, 2200 + Math.random() * 1600);
+        effectTimers.push(warpTimer);
+      }, BUG_DURATION_MS);
+      effectTimers.push(bugDoneTimer);
     });
   }
 

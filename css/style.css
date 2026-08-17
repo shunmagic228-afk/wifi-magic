@@ -137,57 +137,25 @@ body {
   24%, 48%, 71% { opacity: .12; }
 }
 
-/* "VHS roll" interference band, driven by JS (see app.js playRollGhost):
-   a translucent duplicate of the whole scroll content sweeps up and down
-   behind a moving horizontal band, and slowly drifts from the top of the
-   page downward over the effect's duration — so the hero Wi-Fi icon and
-   header flicker through even when the real list is scrolled far down. */
-#roll-ghost-overlay {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
+/* Pre-conversion "screen bug" glitch, driven by JS (see app.js
+   playBugGlitch): random rows/header elements briefly desaturate+dim in
+   place while a translucent, slightly offset duplicate of that same
+   element is overlaid on top of it — a local double-exposure stutter,
+   not a sweeping band. Applied directly to the real elements at their
+   live position, so it works identically regardless of scroll offset. */
+.bug-dim {
+  opacity: .4 !important;
+  filter: saturate(.35) brightness(1.2);
+  transition: none !important;
+}
+.bug-ghost {
+  position: fixed;
+  margin: 0;
   pointer-events: none;
-  z-index: 40;
-  opacity: 0;
-}
-#roll-ghost-overlay.on { opacity: 1; }
-.roll-band {
-  position: absolute;
-  left: 0;
-  right: 0;
-  overflow: hidden;
-  opacity: .6;
-  filter: saturate(1.25) contrast(1.05);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.9) 22%, rgba(0,0,0,.9) 78%, transparent 100%);
-  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.9) 22%, rgba(0,0,0,.9) 78%, transparent 100%);
-  animation: rollJitter 260ms steps(2, end) infinite;
-}
-.roll-band::before,
-.roll-band::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  background: rgba(255,255,255,.6);
-  mix-blend-mode: overlay;
-}
-.roll-band::before { top: 0; }
-.roll-band::after { bottom: 0; }
-.roll-ghost-inner {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: auto;
-  overflow: visible;
-}
-@keyframes rollJitter {
-  0%   { transform: translateX(0); }
-  50%  { transform: translateX(-1.5px); }
-  100% { transform: translateX(1px); }
+  z-index: 41;
+  opacity: .4;
+  filter: saturate(1.5);
+  mix-blend-mode: normal;
 }
 
 .scroll-area {
