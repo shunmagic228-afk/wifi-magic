@@ -339,10 +339,6 @@ body {
   opacity: .85;
   transform: translateY(-50%);
 }
-.ssid-name.fading {
-  color: #C9C9CE !important;
-  animation: none;
-}
 .ssid-name.revealed {
   color: var(--ios-text);
   animation: revealPop .18s ease-out;

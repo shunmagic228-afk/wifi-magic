@@ -1,11 +1,12 @@
 // SSID transformation / proliferation animation, modeled on the reference
-// "hacker" effect video: each row briefly glitches (magenta flash + scanline),
-// dims, then reveals the target text; meanwhile new duplicate rows keep
-// appearing over time so the list grows well beyond its original length.
+// "SSID変化参考.mov" video: rows convert one at a time, top to bottom (not
+// randomly), each briefly scrambling to random characters before snapping
+// straight to the target text — no separate dim/fade step, the reveal is
+// immediate; meanwhile new duplicate rows keep appearing over time so the
+// list grows well beyond its original length.
 const Effect = (() => {
-  const GLITCH_MS = 380;
-  const FADE_MS = 560;
-  const SPREAD_MS = 6400;            // window over which original rows convert
+  const GLITCH_MS = 300;             // per-row scramble duration
+  const ROW_STAGGER_MS = 300;        // delay between successive rows starting (≈ GLITCH_MS, so only one row is mid-scramble at a time)
   const PROLIFERATE_EXTRA = 34;      // extra duplicate rows appended
   const PROLIFERATE_WINDOW_MS = 9000;
   const PROLIFERATE_START_DELAY = 900;
@@ -64,26 +65,10 @@ const Effect = (() => {
     const t1 = setTimeout(() => {
       if (myGen !== generation) return;
       nameEl.classList.remove('glitch');
-      nameEl.classList.add('fading');
-      nameEl.textContent = origText;
-      const t2 = setTimeout(() => {
-        if (myGen !== generation) return;
-        nameEl.innerHTML = targetHtml;
-        nameEl.classList.remove('fading');
-        nameEl.classList.add('revealed');
-      }, FADE_MS);
-      timers.push(t2);
+      nameEl.innerHTML = targetHtml;
+      nameEl.classList.add('revealed');
     }, GLITCH_MS);
     timers.push(t1);
-  }
-
-  function shuffled(arr) {
-    const a = arr.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
   }
 
   // Starts the effect. `targetHtml` must be pre-escaped/trusted HTML (see
@@ -94,9 +79,9 @@ const Effect = (() => {
     const myGen = generation;
     const timers = [];
 
-    const nameEls = shuffled(Array.from(container.querySelectorAll('.ssid-row .ssid-name')));
-    nameEls.forEach((nameEl) => {
-      const delay = Math.random() * SPREAD_MS;
+    const nameEls = Array.from(container.querySelectorAll('.ssid-row .ssid-name'));
+    nameEls.forEach((nameEl, i) => {
+      const delay = i * ROW_STAGGER_MS;
       const t = setTimeout(() => {
         if (myGen !== generation) return;
         convertRow(nameEl, targetHtml, myGen, timers);
@@ -116,7 +101,7 @@ const Effect = (() => {
       timers.push(t);
     }
 
-    const convertPhaseMs = SPREAD_MS + GLITCH_MS + FADE_MS;
+    const convertPhaseMs = Math.max(0, nameEls.length - 1) * ROW_STAGGER_MS + GLITCH_MS;
     const proliferatePhaseMs = PROLIFERATE_START_DELAY + PROLIFERATE_WINDOW_MS;
     const totalMs = Math.max(convertPhaseMs, proliferatePhaseMs);
     return { generation: myGen, timers, totalMs };

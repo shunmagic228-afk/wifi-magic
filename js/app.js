@@ -96,7 +96,7 @@
   // it (a local double-exposure stutter), then removes the clone and
   // un-dims. Targets the real elements at their live position each pulse
   // (getBoundingClientRect), so it looks correct regardless of scroll.
-  const BUG_DURATION_MS = 5800;
+  const BUG_DURATION_MS = 4800;
   const BUG_PULSE_GAP_MIN = 90, BUG_PULSE_GAP_MAX = 260;
   const BUG_PULSE_LEN_MIN = 90, BUG_PULSE_LEN_MAX = 220;
   let bugGhosts = [];
