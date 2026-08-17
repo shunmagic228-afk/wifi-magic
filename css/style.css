@@ -281,13 +281,11 @@ body {
 }
 .ssid-name.vanished { opacity: 0; }
 .suit-glyph {
-  font-size: 1.75em;
-  font-weight: 700;
+  font-size: 1em;
   display: inline-block;
   line-height: 1;
   vertical-align: middle;
   margin-right: 1px;
-  transform: translateY(-0.125em);
 }
 .ssid-icons {
   display: flex;
