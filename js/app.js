@@ -9,8 +9,7 @@
   const triggerDot = document.getElementById('trigger-dot');
   const flashOverlay = document.getElementById('flash-overlay');
   const warpOverlay = document.getElementById('warp-overlay');
-  const staticCanvas = document.getElementById('static-overlay');
-  const staticCtx = staticCanvas.getContext('2d');
+  const rollGhostOverlay = document.getElementById('roll-ghost-overlay');
   const networkCard = document.getElementById('network-card');
   const heroIcon = document.getElementById('hero-icon');
   const zoneSettings = document.getElementById('zone-settings');
@@ -74,59 +73,87 @@
   }
 
   let flashGen = 0;
-  let staticGen = 0;
+  let rollGhostGen = 0;
 
   function resetToIdle() {
     if (armTimer) { clearTimeout(armTimer); armTimer = null; }
     clearEffectTimers();
     Effect.cancelAll();
     flashGen++;
-    staticGen++;
+    rollGhostGen++;
     effectState = 'idle';
     showTriggerDot(false);
     flashOverlay.classList.remove('on');
-    staticCanvas.classList.remove('on');
+    rollGhostOverlay.classList.remove('on');
+    rollGhostOverlay.innerHTML = '';
     screenMain.classList.remove('screen-warp');
     warpOverlay.classList.remove('on');
     disperseArmed = false;
     renderMainScreen();
   }
 
-  // Brief TV-static "snow" burst layered on top partway through the flash
-  // (see runEffectNow) — runs on its own generation counter so it never
-  // interferes with the flash's own cancelable timer chain.
-  const STATIC_W = 48, STATIC_H = 104;
-  staticCanvas.width = STATIC_W;
-  staticCanvas.height = STATIC_H;
+  // "VHS roll" interference: a translucent duplicate of the whole scroll
+  // content, clipped to a horizontal band that sweeps up/down the visible
+  // list area repeatedly, while the duplicate's own content slowly drifts
+  // from the top of the page downward over the effect duration. Since the
+  // duplicate always starts at the true top of the document regardless of
+  // the real list's current scroll position, the hero Wi-Fi icon/header
+  // flickers through early on even if the user has scrolled the real list
+  // far down — matching the reference video's "footage playing from the
+  // top" look. Runs on its own generation counter/rAF loop, independent of
+  // the flash's setTimeout chain.
+  const ROLL_BAND_HEIGHT = 130;
+  const ROLL_SWEEP_MS = 1050;
+  const ROLL_DURATION_MS = 5600;
 
-  function drawStaticFrame() {
-    const imgData = staticCtx.createImageData(STATIC_W, STATIC_H);
-    const d = imgData.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const shade = Math.random() < 0.5 ? 0 : 255;
-      d[i] = d[i + 1] = d[i + 2] = shade;
-      d[i + 3] = 255;
-    }
-    staticCtx.putImageData(imgData, 0, 0);
-  }
+  function playRollGhost(durationMs) {
+    const myGen = ++rollGhostGen;
 
-  function playStatic(durationMs, onDone) {
-    const myGen = ++staticGen;
-    staticCanvas.classList.add('on');
-    const frameMs = 45;
-    const start = Date.now();
-    function frame() {
-      if (myGen !== staticGen) return; // superseded by a reset
-      drawStaticFrame();
-      if (Date.now() - start < durationMs) {
-        const t = setTimeout(frame, frameMs);
-        effectTimers.push(t);
-      } else {
-        staticCanvas.classList.remove('on');
-        onDone();
+    const clone = mainScroll.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+    clone.classList.add('roll-ghost-inner');
+    clone.style.position = 'absolute';
+    clone.style.overflow = 'visible';
+    clone.style.height = 'auto';
+
+    const band = document.createElement('div');
+    band.className = 'roll-band';
+    band.style.height = ROLL_BAND_HEIGHT + 'px';
+    band.appendChild(clone);
+
+    rollGhostOverlay.innerHTML = '';
+    rollGhostOverlay.appendChild(band);
+
+    const scrollRect = mainScroll.getBoundingClientRect();
+    const mainRect = screenMain.getBoundingClientRect();
+    rollGhostOverlay.style.top = (scrollRect.top - mainRect.top) + 'px';
+
+    const viewportH = scrollRect.height;
+    const maxOffset = Math.max(0, mainScroll.scrollHeight - viewportH);
+
+    rollGhostOverlay.classList.add('on');
+
+    const start = performance.now();
+    function frame(now) {
+      if (myGen !== rollGhostGen) return;
+      const t = now - start;
+      if (t >= durationMs) {
+        rollGhostOverlay.classList.remove('on');
+        rollGhostOverlay.innerHTML = '';
+        return;
       }
+      const sweepT = (t % ROLL_SWEEP_MS) / ROLL_SWEEP_MS;
+      const bandTop = -ROLL_BAND_HEIGHT + sweepT * (viewportH + ROLL_BAND_HEIGHT * 2);
+      band.style.top = bandTop + 'px';
+
+      const driftT = Math.min(1, t / durationMs);
+      const virtualScroll = driftT * maxOffset;
+      clone.style.top = (-virtualScroll) + 'px';
+
+      requestAnimationFrame(frame);
     }
-    frame();
+    requestAnimationFrame(frame);
   }
 
   // Brief whole-screen "signal glitch" wobble fired once partway through
@@ -170,14 +197,9 @@
   function runEffectNow() {
     effectState = 'running';
     showTriggerDot(false);
-    // Static plays in parallel partway through the flash (not before it),
-    // so the flash's own total duration never changes.
-    const staticStartTimer = setTimeout(() => {
-      if (effectState === 'running') playStatic(220, () => {});
-    }, 420);
-    effectTimers.push(staticStartTimer);
     playFlash(() => {
       if (effectState !== 'running') return; // reset happened mid-flash
+      playRollGhost(ROLL_DURATION_MS);
       const target = currentTargetHTML();
       const handle = Effect.start(networkCard, target);
       effectTimers = effectTimers.concat(handle.timers);

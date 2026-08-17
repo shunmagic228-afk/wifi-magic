@@ -103,20 +103,6 @@ body {
 }
 #trigger-dot.on { opacity: 1; }
 
-/* brief TV-static "snow" burst played right before the strobe flash */
-#static-overlay {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 52;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-#static-overlay.on { opacity: .38; }
-
 /* full-screen strobe flash, driven by JS (see app.js playFlash) */
 #flash-overlay {
   position: absolute;
@@ -149,6 +135,59 @@ body {
   0%, 100% { opacity: 0; }
   12%, 36%, 60%, 82% { opacity: .55; }
   24%, 48%, 71% { opacity: .12; }
+}
+
+/* "VHS roll" interference band, driven by JS (see app.js playRollGhost):
+   a translucent duplicate of the whole scroll content sweeps up and down
+   behind a moving horizontal band, and slowly drifts from the top of the
+   page downward over the effect's duration — so the hero Wi-Fi icon and
+   header flicker through even when the real list is scrolled far down. */
+#roll-ghost-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 40;
+  opacity: 0;
+}
+#roll-ghost-overlay.on { opacity: 1; }
+.roll-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  opacity: .6;
+  filter: saturate(1.25) contrast(1.05);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.9) 22%, rgba(0,0,0,.9) 78%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.9) 22%, rgba(0,0,0,.9) 78%, transparent 100%);
+  animation: rollJitter 260ms steps(2, end) infinite;
+}
+.roll-band::before,
+.roll-band::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: rgba(255,255,255,.6);
+  mix-blend-mode: overlay;
+}
+.roll-band::before { top: 0; }
+.roll-band::after { bottom: 0; }
+.roll-ghost-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  overflow: visible;
+}
+@keyframes rollJitter {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(-1.5px); }
+  100% { transform: translateX(1px); }
 }
 
 .scroll-area {
