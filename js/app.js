@@ -16,9 +16,10 @@
   const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
   const SUITS = ['♠','♥','♦','♣'];
 
-  // U+FE0E forces plain monochrome "text presentation" for ♥/♦ instead of
-  // iOS possibly rendering them as colorful emoji glyphs that ignore CSS color.
-  const TEXT_VARIANT = '︎';
+  // U+FE0F (VS16) forces the colorful native emoji presentation for
+  // ♠/♥/♦/♣ (Apple's built-in card-suit emoji glyphs/colors) instead of
+  // the plain monochrome text glyph.
+  const EMOJI_VARIANT = '️';
 
   function escapeHtml(s) {
     const d = document.createElement('div');
@@ -26,9 +27,9 @@
     return d.innerHTML;
   }
 
-  // Builds the SSID target as safe HTML with ♥/♦ colored red (matching a
-  // real playing card), ♠/♣ left black. Custom free-text mode is plain
-  // escaped text with no suit coloring.
+  // Builds the SSID target as safe HTML using the native colored suit emoji
+  // (its color comes from the OS emoji font, not CSS). Custom free-text
+  // mode is plain escaped text with no suit styling.
   function currentTargetHTML() {
     const s = Store.getAll();
     if (s.mode === 'custom') {
@@ -36,10 +37,8 @@
       return escapeHtml(t.length ? t : '♠');
     }
     const dot = s.dotPrefix ? '.' : '';
-    const isRed = (s.suit === '♥' || s.suit === '♦');
-    const suitHtml = escapeHtml(s.suit + TEXT_VARIANT);
-    const cls = 'suit-glyph' + (isRed ? ' suit-red' : '');
-    return escapeHtml(dot) + '<span class="' + cls + '">' + suitHtml + '</span>' + escapeHtml(s.rank);
+    const suitHtml = escapeHtml(s.suit + EMOJI_VARIANT);
+    return escapeHtml(dot) + '<span class="suit-glyph">' + suitHtml + '</span>' + escapeHtml(s.rank);
   }
 
   // ---------- Effect state machine (in-memory only; never persisted) ----------
@@ -97,7 +96,7 @@
   // un-dims. Targets the real elements at their live position each pulse
   // (getBoundingClientRect), so it looks correct regardless of scroll.
   const BUG_DURATION_MS = 2800;
-  const BUG_PULSE_GAP_MIN = 90, BUG_PULSE_GAP_MAX = 260;
+  const BUG_PULSE_GAP_MIN = 50, BUG_PULSE_GAP_MAX = 150;
   const BUG_PULSE_LEN_MIN = 90, BUG_PULSE_LEN_MAX = 220;
   let bugGhosts = [];
 
@@ -124,8 +123,8 @@
     clone.removeAttribute('id');
     clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
     clone.className = (clone.className ? clone.className + ' ' : '') + 'bug-ghost';
-    const dx = (Math.random() - 0.5) * 8;
-    const dy = 3 + Math.random() * 6;
+    const dx = (Math.random() - 0.5) * 16;
+    const dy = 5 + Math.random() * 11;
     clone.style.left = (rect.left + dx) + 'px';
     clone.style.top = (rect.top + dy) + 'px';
     clone.style.width = rect.width + 'px';
@@ -145,7 +144,7 @@
       const candidates = bugCandidates();
       if (candidates.length) {
         const runStart = Math.floor(Math.random() * candidates.length);
-        const runLen = 1 + Math.floor(Math.random() * 3);
+        const runLen = 1 + Math.floor(Math.random() * 4);
         const targets = candidates.slice(runStart, runStart + runLen);
         const pulseMs = BUG_PULSE_LEN_MIN + Math.random() * (BUG_PULSE_LEN_MAX - BUG_PULSE_LEN_MIN);
 
@@ -385,7 +384,7 @@
   const dotSegmented = document.getElementById('dot-segmented');
 
   suitGrid.querySelectorAll('.suit-btn').forEach(b => {
-    b.textContent = b.dataset.suit + TEXT_VARIANT;
+    b.textContent = b.dataset.suit + EMOJI_VARIANT;
   });
 
   function updateCardPreview() {

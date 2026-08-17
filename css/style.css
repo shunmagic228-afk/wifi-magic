@@ -144,8 +144,8 @@ body {
    not a sweeping band. Applied directly to the real elements at their
    live position, so it works identically regardless of scroll offset. */
 .bug-dim {
-  opacity: .4 !important;
-  filter: saturate(.35) brightness(1.2);
+  opacity: .28 !important;
+  filter: saturate(.2) brightness(1.35);
   transition: none !important;
 }
 .bug-ghost {
@@ -153,8 +153,8 @@ body {
   margin: 0;
   pointer-events: none;
   z-index: 41;
-  opacity: .4;
-  filter: saturate(1.5);
+  opacity: .58;
+  filter: saturate(2) hue-rotate(-8deg);
   mix-blend-mode: normal;
 }
 
@@ -289,7 +289,6 @@ body {
   margin-right: 1px;
   transform: translateY(-0.125em);
 }
-.suit-red { color: #FF3B30; }
 .ssid-icons {
   display: flex;
   align-items: center;
@@ -463,8 +462,6 @@ body {
   align-items: center;
   justify-content: center;
 }
-.suit-btn.red { color: #FF3B30; }
-.suit-btn.black { color: #1c1c1e; }
 .suit-btn.active {
   border-color: var(--ios-blue);
   background: #EAF3FF;
