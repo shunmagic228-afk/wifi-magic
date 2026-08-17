@@ -40,7 +40,7 @@
     const isRed = (s.suit === '♥' || s.suit === '♦');
     const suitHtml = escapeHtml(s.suit + TEXT_VARIANT);
     const cls = 'suit-glyph' + (isRed ? ' suit-red' : '');
-    return escapeHtml(dot + s.rank + ' ') + '<span class="' + cls + '">' + suitHtml + '</span>';
+    return escapeHtml(dot) + '<span class="' + cls + '">' + suitHtml + '</span>' + escapeHtml(s.rank);
   }
 
   // ---------- Effect state machine (in-memory only; never persisted) ----------

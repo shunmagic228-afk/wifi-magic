@@ -318,7 +318,7 @@ body {
   display: inline-block;
   line-height: 1;
   vertical-align: middle;
-  margin-left: 1px;
+  margin-right: 1px;
   transform: translateY(-0.125em);
 }
 .suit-red { color: #FF3B30; }
