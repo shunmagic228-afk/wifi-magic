@@ -189,7 +189,17 @@
 
   // Rapid full-screen black strobe played right before the SSID reveal
   // begins, matching the reference "hacker" video's flash-cut transition.
-  const FLASH_PATTERN = [90, 70, 85, 65, 90, 70, 95, 75, 100, 80, 120, 90];
+  // Each original on/off pair is split into two faster on/off pairs of
+  // half the duration, doubling the flicker count while keeping the total
+  // strobe duration identical (same total ~1030ms, just more frantic).
+  const FLASH_PATTERN = [
+    45, 35, 45, 35,
+    43, 33, 42, 32,
+    45, 35, 45, 35,
+    48, 38, 47, 37,
+    50, 40, 50, 40,
+    60, 45, 60, 45
+  ];
 
   function playFlash(onDone) {
     const myGen = ++flashGen;
