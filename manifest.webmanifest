@@ -1,6 +1,6 @@
 {
-  "name": "Wi-Fi",
-  "short_name": "Wi-Fi",
+  "name": "Wi-Fi FX",
+  "short_name": "Wi-Fi FX",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
