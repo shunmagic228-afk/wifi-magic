@@ -95,7 +95,6 @@
   // it (a local double-exposure stutter), then removes the clone and
   // un-dims. Targets the real elements at their live position each pulse
   // (getBoundingClientRect), so it looks correct regardless of scroll.
-  const BUG_DURATION_MS = 2800;
   const BUG_PULSE_GAP_MIN = 50, BUG_PULSE_GAP_MAX = 150;
   const BUG_PULSE_LEN_MIN = 90, BUG_PULSE_LEN_MAX = 220;
   let bugGhosts = [];
@@ -219,30 +218,48 @@
     step();
   }
 
+  // The user-facing "effect duration" setting covers everything AFTER the
+  // flash (bug-glitch phase + SSID conversion cascade) — the flash itself
+  // always stays the same length regardless (more flashes at a longer
+  // setting would just be an uncomfortably long strobe). The chosen total
+  // is split between the two phases with a random ratio each run, so the
+  // pacing feels organic rather than mechanically identical every time.
+  const BUG_PHASE_MIN_MS = 500;
+  const CONVERT_PHASE_MIN_MS = 700;
+  const BUG_PHASE_RATIO_MIN = 0.30, BUG_PHASE_RATIO_MAX = 0.55;
+
   function runEffectNow() {
     effectState = 'running';
     showTriggerDot(false);
     playFlash(() => {
       if (effectState !== 'running') return; // reset happened mid-flash
+
+      const totalMs = Store.get('effectDurationSeconds') * 1000;
+      const ratio = BUG_PHASE_RATIO_MIN + Math.random() * (BUG_PHASE_RATIO_MAX - BUG_PHASE_RATIO_MIN);
+      let bugMs = Math.max(BUG_PHASE_MIN_MS, Math.min(totalMs * ratio, totalMs - CONVERT_PHASE_MIN_MS));
+      const convertMs = Math.max(CONVERT_PHASE_MIN_MS, totalMs - bugMs);
+
       // The screen-bug glitch plays alone first (matching the reference:
       // no SSID scrambling happens until it's done), then the SSID
       // conversion begins. The screen-warp wobble fires once during this
-      // pre-conversion bug phase (not during the SSID conversion).
-      playBugGlitch(BUG_DURATION_MS);
+      // pre-conversion bug phase (not during the SSID conversion), timed
+      // to always finish before the bug phase hands off.
+      playBugGlitch(bugMs);
+      const warpSlack = Math.max(0, bugMs - WARP_DURATION_MS - 100);
       const warpTimer = setTimeout(() => {
         if (effectState === 'running') playScreenWarp();
-      }, 700 + Math.random() * 1300);
+      }, Math.random() * warpSlack);
       effectTimers.push(warpTimer);
       const bugDoneTimer = setTimeout(() => {
         if (effectState !== 'running') return;
         const target = currentTargetHTML();
-        const handle = Effect.start(networkCard, target);
+        const handle = Effect.start(networkCard, target, convertMs);
         effectTimers = effectTimers.concat(handle.timers);
         const doneTimer = setTimeout(() => {
           if (effectState === 'running') effectState = 'done';
         }, handle.totalMs + 200);
         effectTimers.push(doneTimer);
-      }, BUG_DURATION_MS);
+      }, bugMs);
       effectTimers.push(bugDoneTimer);
     });
   }
@@ -449,7 +466,7 @@
     delayValueEl.innerHTML = v + '<span>秒</span>';
   }
   document.getElementById('delay-minus').addEventListener('click', () => {
-    const v = Math.max(3, Store.get('delaySeconds') - 1);
+    const v = Math.max(1, Store.get('delaySeconds') - 1);
     Store.set('delaySeconds', v);
     renderDelay();
   });
@@ -466,7 +483,7 @@
     disperseDelayValueEl.innerHTML = v + '<span>秒</span>';
   }
   document.getElementById('disperse-delay-minus').addEventListener('click', () => {
-    const v = Math.max(3, Store.get('disperseDelaySeconds') - 1);
+    const v = Math.max(1, Store.get('disperseDelaySeconds') - 1);
     Store.set('disperseDelaySeconds', v);
     renderDisperseDelay();
   });
@@ -474,6 +491,23 @@
     const v = Math.min(20, Store.get('disperseDelaySeconds') + 1);
     Store.set('disperseDelaySeconds', v);
     renderDisperseDelay();
+  });
+
+  // ---- effect duration stepper ----
+  const effectDurationValueEl = document.getElementById('effect-duration-value');
+  function renderEffectDuration() {
+    const v = Store.get('effectDurationSeconds');
+    effectDurationValueEl.innerHTML = v + '<span>秒</span>';
+  }
+  document.getElementById('effect-duration-minus').addEventListener('click', () => {
+    const v = Math.max(3, Store.get('effectDurationSeconds') - 1);
+    Store.set('effectDurationSeconds', v);
+    renderEffectDuration();
+  });
+  document.getElementById('effect-duration-plus').addEventListener('click', () => {
+    const v = Math.min(10, Store.get('effectDurationSeconds') + 1);
+    Store.set('effectDurationSeconds', v);
+    renderEffectDuration();
   });
 
   // ---- base SSID list editor (also driven by OCR import) ----
@@ -564,6 +598,7 @@
     customTextInput.value = s.customText || '';
     renderDelay();
     renderDisperseDelay();
+    renderEffectDuration();
     ocrStatusEl.textContent = '';
     renderSsidList();
   }

@@ -5,8 +5,8 @@
 // immediate; meanwhile new duplicate rows keep appearing over time so the
 // list grows well beyond its original length.
 const Effect = (() => {
-  const GLITCH_MS = 300;             // per-row scramble duration
-  const ROW_STAGGER_MS = 300;        // delay between successive rows starting (≈ GLITCH_MS, so only one row is mid-scramble at a time)
+  const ROW_STAGGER_MIN_MS = 90;     // floor so the scramble is still readable even with many rows
+  const ROW_STAGGER_MAX_MS = 900;    // ceiling so a short list doesn't drag on forever
   const PROLIFERATE_EXTRA = 34;      // extra duplicate rows appended
   const PROLIFERATE_WINDOW_MS = 9000;
   const PROLIFERATE_START_DELAY = 900;
@@ -50,11 +50,11 @@ const Effect = (() => {
     return row;
   }
 
-  function convertRow(nameEl, targetHtml, myGen, timers) {
+  function convertRow(nameEl, targetHtml, myGen, timers, glitchMs) {
     const origText = nameEl.textContent;
     const scrambleLen = Math.max(4, Math.min(origText.length, 24));
     nameEl.classList.add('glitch');
-    const scrambleSteps = Math.max(2, Math.round(GLITCH_MS / SCRAMBLE_STEP_MS));
+    const scrambleSteps = Math.max(2, Math.round(glitchMs / SCRAMBLE_STEP_MS));
     for (let i = 1; i < scrambleSteps; i++) {
       const ts = setTimeout(() => {
         if (myGen !== generation) return;
@@ -67,24 +67,33 @@ const Effect = (() => {
       nameEl.classList.remove('glitch');
       nameEl.innerHTML = targetHtml;
       nameEl.classList.add('revealed');
-    }, GLITCH_MS);
+    }, glitchMs);
     timers.push(t1);
   }
 
   // Starts the effect. `targetHtml` must be pre-escaped/trusted HTML (see
-  // app.js's currentTargetHTML). Returns { generation, timers, totalMs } so
-  // the caller can track completion and force-cancel via clearTimeout on reset.
-  function start(container, targetHtml) {
+  // app.js's currentTargetHTML). `convertBudgetMs` is the total time the
+  // row-by-row conversion cascade should take — the per-row stagger/scramble
+  // duration is derived from it (budget / row count), so the same waterfall
+  // look holds at any chosen total duration. Returns { generation, timers,
+  // totalMs } so the caller can track completion and force-cancel via
+  // clearTimeout on reset.
+  function start(container, targetHtml, convertBudgetMs) {
     generation++;
     const myGen = generation;
     const timers = [];
 
     const nameEls = Array.from(container.querySelectorAll('.ssid-row .ssid-name'));
+    const n = nameEls.length;
+    const rawStagger = n > 0 ? convertBudgetMs / n : convertBudgetMs;
+    const rowStagger = Math.max(ROW_STAGGER_MIN_MS, Math.min(rawStagger, ROW_STAGGER_MAX_MS));
+    const glitchMs = rowStagger;
+
     nameEls.forEach((nameEl, i) => {
-      const delay = i * ROW_STAGGER_MS;
+      const delay = i * rowStagger;
       const t = setTimeout(() => {
         if (myGen !== generation) return;
-        convertRow(nameEl, targetHtml, myGen, timers);
+        convertRow(nameEl, targetHtml, myGen, timers, glitchMs);
       }, delay);
       timers.push(t);
     });
@@ -101,7 +110,7 @@ const Effect = (() => {
       timers.push(t);
     }
 
-    const convertPhaseMs = Math.max(0, nameEls.length - 1) * ROW_STAGGER_MS + GLITCH_MS;
+    const convertPhaseMs = Math.max(0, n - 1) * rowStagger + glitchMs;
     const proliferatePhaseMs = PROLIFERATE_START_DELAY + PROLIFERATE_WINDOW_MS;
     const totalMs = Math.max(convertPhaseMs, proliferatePhaseMs);
     return { generation: myGen, timers, totalMs };

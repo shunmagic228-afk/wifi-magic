@@ -26,6 +26,7 @@ const Store = (() => {
     dotPrefix: true,
     delaySeconds: 5,
     disperseDelaySeconds: 3,
+    effectDurationSeconds: 7,
     baseSsids: DEFAULT_SSIDS
   };
 
